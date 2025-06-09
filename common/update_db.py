@@ -73,12 +73,16 @@ def update_summoner_data_to_db(match_data):
         damage = player["damage"]
         multiKills = player["multiKills"]
         itemThrow = player["itemThrow"]
-        smokeThrows = player["smokeThrows"]
-        grenadeDamage = player["grenadeDamage"]
-        infernoDamage = player["infernoDamage"]
         score = player["score"]
         endGame = player["endGame"]
-        userForbidDTO = player["userForbidDTO"]
+        oldRank = player["oldRank"]
+        pvpScore = player["pvpScore"]
+        pvpScoreChange = player["pvpScoreChange"]
+        matchScore = player["matchScore"]
+        csMatchPlayerInterestList = player["csMatchPlayerInterestList"]
+        first = player["first"]
+        second = player["second"]
+        third = player["third"]
         win = player["win"]
 
         # 构建SQL插入语句示例
@@ -91,8 +95,8 @@ def update_summoner_data_to_db(match_data):
             threeKill, fourKill, fiveKill, vs1, vs2, vs3, vs4, vs5, dmgArmor, dmgHealth,
             adpr, fireCount, hitCount, rws, pvpTeam, ranks, we, throwsCnt, teamId,
             snipeNum, entryKill, firstDeath, mvp, kda, kast, handGunKill, awpKill, 
-            entryDeath, botKill, negKill, damage, multiKills, itemThrow, smokeThrows,
-            grenadeDamage, infernoDamage, score, endGame, userForbidDTO,
+            entryDeath, botKill, negKill, damage, multiKills, itemThrow, score, endGame,
+            oldRank, pvpScore, pvpScoreChange, matchScore,
             win
         ) VALUES (
             '{matchId}', '{map}', '{mapEn}', '{startTime}', '{endTime}', {duration},
@@ -103,8 +107,8 @@ def update_summoner_data_to_db(match_data):
             {vs1}, {vs2}, {vs3}, {vs4}, {vs5}, {dmgArmor}, {dmgHealth}, {adpr},
             {fireCount}, {hitCount}, {rws}, {pvpTeam}, {ranks}, {we}, {throwsCnt},
             {teamId}, {snipeNum}, {entryKill}, {firstDeath}, {mvp}, {kda}, {kast}, {handGunKill}, {awpKill}, 
-            {entryDeath}, {botKill}, {negKill}, {damage}, {multiKills}, {itemThrow}, {smokeThrows},
-            {grenadeDamage}, {infernoDamage}, {score}, {endGame}, {userForbidDTO},
+            {entryDeath}, {botKill}, {negKill}, {damage}, {multiKills}, {itemThrow}, {score}, {endGame},
+            {oldRank}, {pvpScore}, {pvpScoreChange}, {matchScore}, 
             {win}
         );
         """

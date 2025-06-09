@@ -14,14 +14,15 @@ class MatchDataFetcher:
 
     @staticmethod
     def determine_range_count(count):
-        if count < 100:
-            return 10
-        elif 100 <= count < 400:
-            return 20
-        else:
-            return 40
+        # if count < 100:
+        #     return 10
+        # elif 100 <= count < 400:
+        #     return 20
+        # else:
+        #     return 40
+        return count
 
-    def _fetch_match_page(self, steam_id, page, range_count, pvpType):
+    def _fetch_match_page(self, steam_id, page, range_count, pvpType, csgoSeasonId):
         """获取单页比赛历史数据"""
         url = 'https://api.wmpvp.com/api/csgo/home/match/list'
         payload = {
@@ -29,11 +30,11 @@ class MatchDataFetcher:
             "pvpType": pvpType,
             "toSteamId": steam_id,
             "page": page,
-            "csgoSeasonId": "recent",
+            "csgoSeasonId": csgoSeasonId,
             "dataSource": 3,
             "pageSize": range_count
         }
-
+        print(payload)
         result = self.request_util.post_json(url, HEADERS, payload)
         if result and result.get('statusCode') == 0:
             return result.get('data', {}).get('matchList', [])
@@ -45,14 +46,20 @@ class MatchDataFetcher:
         total_pages = (self.data_count + range_count - 1) // range_count  # 向上取整
         match_ids = []
         pvp_type = [0, 12, 41]
+        csgoSeasonId = []
+        # for i in range(1,21):
+        #     seasonId = f"S{i}"
+        #     csgoSeasonId.append(seasonId)
+        csgoSeasonId.append("recent")
         for page in range(1, total_pages + 1):
-            for pvp in pvp_type:
-                matches = self._fetch_match_page(steam_id, page, range_count, pvp)
-                if not matches:
-                    break
+            for seasonId in csgoSeasonId:
+                for pvp in pvp_type:
+                    matches = self._fetch_match_page(steam_id, page, range_count, pvp, seasonId)
+                    # if not matches:
+                    #     break
 
-                match_ids.extend(match['matchId'] for match in matches)
-                logger.debug(f"Page {page}: Added {len(matches)} matches")
+                    match_ids.extend(match['matchId'] for match in matches)
+                    logger.debug(f"Page {page}: Added {len(matches)} matches")
 
         logger.info(f"Total matches fetched: {len(match_ids)}")
         return match_ids
