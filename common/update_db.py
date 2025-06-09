@@ -1,16 +1,10 @@
 import logging
-from utils.logutil import logger
-from utils.mysqlutil import MysqlUtil
+from utils.log_util import logger
+from utils.mysql_util import mysql
 from config.settings import tb_match_detail_name
-from config.itemList import item_name
-
-mysql = MysqlUtil()
 
 
 def update_summoner_data_to_db(match_data):
-    # 实例化 MysqlUtil 类
-    mysql = MysqlUtil()
-
     # 插入数据
     # for game_data in match_data:
     game = match_data  # 因为 JSON 数据是一个包含单个元素的列表
@@ -99,35 +93,4 @@ def update_summoner_data_to_db(match_data):
         logger.info(insert_sql)
         # 执行 SQL 语句
         mysql.sql_execute(insert_sql)
-        return 0
-        # delete_query = f"""
-        #     DELETE t1
-        #     FROM {tb_match_detail_name} t1
-        #     JOIN {tb_match_detail_name} t2
-        #     ON t1.matchId = t2.matchId
-        #     AND t1.playerId = t2.playerId
-        #     AND t1.id > t2.id;
-        # """
-        # return mysql.delete_data(delete_query)
     logger.info("SQL执行完毕")
-
-
-def replace_itemName():
-    sql = "select DISTINCT item6 from tb_summoner_data_V5;"
-    res = list(mysql.get_fetchall(sql))
-    print(res)
-
-    for result in res:
-        item0_value = result['item6']  # 直接通过键名访问
-        try:
-            items_name = item_name[str(item0_value)]['name']
-            sql1 = f"update tb_summoner_data_V5 set item6 = '{items_name}' where item6 = '{item0_value}';"
-            print(sql1)
-            affected_rows = mysql.sql_execute(sql1)
-            print(affected_rows)
-        except Exception as e:
-            print(e)
-
-
-if __name__ == '__main__':
-    replace_itemName()

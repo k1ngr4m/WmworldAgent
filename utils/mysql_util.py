@@ -1,5 +1,5 @@
 import pymysql
-from utils.logutil import logger
+from utils.log_util import logger
 from config.settings import DB_CONFIG
 
 
@@ -50,3 +50,5 @@ class MysqlUtil:
             self.cursor.close()
         if self.db is not None:
             self.db.close()
+
+mysql = MysqlUtil()

@@ -8,7 +8,7 @@ API_URL = {
     'get_history_url': 'https://api.wmpvp.com/api/csgo/home/match/list',
     'get_match_url': 'https://api.wmpvp.com/api/v1/csgo/match',
 }
-HEADERS1 = {
+HEADERS = {
     'Host': 'api.wmpvp.com',
     'Accept': '*/*',
     'appversion': '3.4.3',
