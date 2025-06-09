@@ -23,7 +23,7 @@ class MatchDataFetcher:
 
     def _fetch_match_page(self, steam_id, page, range_count, pvpType):
         """获取单页比赛历史数据"""
-        url = f'https://api.wmpvp.com/api/csgo/home/match/list'
+        url = 'https://api.wmpvp.com/api/csgo/home/match/list'
         payload = {
             "mySteamId": 76561198828276659,
             "pvpType": pvpType,
@@ -46,12 +46,13 @@ class MatchDataFetcher:
         match_ids = []
         pvp_type = [0, 12, 41]
         for page in range(1, total_pages + 1):
-            matches = self._fetch_match_page(steam_id, page, range_count, pvp_type)
-            if not matches:
-                break
+            for pvp in pvp_type:
+                matches = self._fetch_match_page(steam_id, page, range_count, pvp)
+                if not matches:
+                    break
 
-            match_ids.extend(match['matchId'] for match in matches)
-            logger.debug(f"Page {page}: Added {len(matches)} matches")
+                match_ids.extend(match['matchId'] for match in matches)
+                logger.debug(f"Page {page}: Added {len(matches)} matches")
 
         logger.info(f"Total matches fetched: {len(match_ids)}")
         return match_ids

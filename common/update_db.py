@@ -5,13 +5,10 @@ from config.settings import tb_match_detail_name
 
 
 def update_summoner_data_to_db(match_data):
-    # 插入数据
-    # for game_data in match_data:
     game = match_data  # 因为 JSON 数据是一个包含单个元素的列表
     matchId = game['matchId']
     map = game['map']
     mapEn = game['mapEn']
-    mapUrl = game['mapUrl']
     startTime = game['startTime']
     endTime = game['endTime']
     duration = game['duration']
@@ -34,6 +31,7 @@ def update_summoner_data_to_db(match_data):
         deaths = player["deaths"]
         assists = player["assists"]
         headShot = player["headShot"]
+        headShotCount = player["headShotCount"]
         headShotRatio = player["headShotRatio"]
         rating = player["rating"]
         pwRating = player["pwRating"]
@@ -66,27 +64,48 @@ def update_summoner_data_to_db(match_data):
         firstDeath = player["firstDeath"]
         mvp = player["mvp"]
         kda = player["kda"]
+        kast = player["kast"]
+        handGunKill = player["handGunKill"]
+        awpKill = player["awpKill"]
+        entryDeath = player["entryDeath"]
+        botKill = player["botKill"]
+        negKill = player["negKill"]
+        damage = player["damage"]
+        multiKills = player["multiKills"]
+        itemThrow = player["itemThrow"]
+        smokeThrows = player["smokeThrows"]
+        grenadeDamage = player["grenadeDamage"]
+        infernoDamage = player["infernoDamage"]
+        score = player["score"]
+        endGame = player["endGame"]
+        userForbidDTO = player["userForbidDTO"]
         win = player["win"]
 
         # 构建SQL插入语句示例
         insert_sql = f"""
         INSERT INTO {tb_match_detail_name} (
-            matchId, map, mapEn, mapUrl, startTime, endTime, duration, winTeam, score1, score2,
+            matchId, map, mapEn, startTime, endTime, duration, winTeam, score1, score2,
             team1PvpId, team2PvpId, pvpLadder, mode, dayOfWeek,
-            playerId, nickName, team, kills, deaths, assists, headShot, headShotRatio,
+            playerId, nickName, team, kills, deaths, assists, headShot, headShotCount, headShotRatio,
             rating, pwRating, flash, flashTeammate, flashSuccess, mvpValue, twoKill,
             threeKill, fourKill, fiveKill, vs1, vs2, vs3, vs4, vs5, dmgArmor, dmgHealth,
             adpr, fireCount, hitCount, rws, pvpTeam, ranks, we, throwsCnt, teamId,
-            snipeNum, entryKill, firstDeath, mvp, kda, win
+            snipeNum, entryKill, firstDeath, mvp, kda, kast, handGunKill, awpKill, 
+            entryDeath, botKill, negKill, damage, multiKills, itemThrow, smokeThrows,
+            grenadeDamage, infernoDamage, score, endGame, userForbidDTO,
+            win
         ) VALUES (
-            '{matchId}', '{map}', '{mapEn}', '{mapUrl}', '{startTime}', '{endTime}', {duration},
+            '{matchId}', '{map}', '{mapEn}', '{startTime}', '{endTime}', {duration},
             {winTeam}, {score1}, {score2}, {team1PvpId}, {team2PvpId}, {pvpLadder}, '{mode}','{dayOfWeek}', 
-            '{playerId}', '{nickName}', {team}, {kills}, {deaths}, {assists}, {headShot},
+            '{playerId}', '{nickName}', {team}, {kills}, {deaths}, {assists}, {headShot}, {headShotCount}, 
             {headShotRatio}, {rating}, {pwRating}, {flash}, {flashTeammate},
             {flashSuccess}, {mvpValue}, {twoKill}, {threeKill}, {fourKill}, {fiveKill},
             {vs1}, {vs2}, {vs3}, {vs4}, {vs5}, {dmgArmor}, {dmgHealth}, {adpr},
             {fireCount}, {hitCount}, {rws}, {pvpTeam}, {ranks}, {we}, {throwsCnt},
-            {teamId}, {snipeNum}, {entryKill}, {firstDeath}, {mvp}, {kda}, {win}
+            {teamId}, {snipeNum}, {entryKill}, {firstDeath}, {mvp}, {kda}, {kast}, {handGunKill}, {awpKill}, 
+            {entryDeath}, {botKill}, {negKill}, {damage}, {multiKills}, {itemThrow}, {smokeThrows},
+            {grenadeDamage}, {infernoDamage}, {score}, {endGame}, {userForbidDTO},
+            {win}
         );
         """
 

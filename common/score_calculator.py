@@ -1,9 +1,7 @@
 import pytz
 
-from config.championName_zh import championName_zh
 from datetime import datetime
-from utils.logutil import logger
-from config.itemList import item_name
+from utils.log_util import logger
 
 
 # 保留特定的键值对
@@ -20,6 +18,7 @@ def get_filtered_data(data, toSteamId):
             "deaths": players['death'],          # 死亡
             "assists": players['assist'],        # 助攻
             "headShot": players['headShot'],            # 爆头数
+            "headShotCount": players['headShotCount'],      # 爆头数
             "headShotRatio": players['headShotRatio'],  # 爆头率
             "rating": players['rating'],        # rating
             "pwRating": players['pwRating'],    # pwRating
@@ -52,6 +51,21 @@ def get_filtered_data(data, toSteamId):
             "firstDeath": players['firstDeath'],    # 首死
             "mvp": players['mvp'],
             "kda": cal_kda(int(players["kill"]), int(players["death"]), int(players["assist"])),
+            "kast": players['kast'],
+            "handGunKill": players['handGunKill'],
+            "awpKill": players['awpKill'],
+            "entryDeath": players['entryDeath'],
+            "botKill": players['botKill'],
+            "negKill": players['negKill'],
+            "damage": players['damage'],
+            "multiKills": players['multiKills'],
+            "itemThrow": players['itemThrow'],
+            "smokeThrows": players['smokeThrows'],
+            "grenadeDamage": players['grenadeDamage'],
+            "infernoDamage": players['infernoDamage'],
+            "score": players['score'],
+            "endGame": players['endGame'],
+            "userForbidDTO": players.get('userForbidDTO', ''),
             "win": cal_win(players['team'], winTeam),
             # "challenges": calculate_participant_scores(players, data),
         }
@@ -66,7 +80,6 @@ def get_filtered_data(data, toSteamId):
         "matchId": data['base']['matchId'],
         "map": data['base']['map'],
         "mapEn": data['base']['mapEn'],
-        "mapUrl": data['base']['mapUrl'],
         "startTime": dateString_to_datetime(data['base']['startTime']),
         "endTime": dateString_to_datetime(data['base']['endTime']),
         "duration": data['base']['duration'],
@@ -83,38 +96,6 @@ def get_filtered_data(data, toSteamId):
     logger.debug(filtered_data)
 
     return filtered_data
-
-
-def calculate_participant_scores(participant, data):
-    # 从participant和data中提取所需的属性
-    game_duration = round(int(data["gameDuration"]) / 60, 2)
-
-    kda = cal_kda(int(participant["kills"]), int(participant["deaths"]), int(participant["assists"]))
-
-    total_damage = cal_total(int(participant["physicalDamageDealtToChampions"]),
-                             int(participant["magicDamageDealtToChampions"]),
-                             int(participant["physicalDamageDealtToChampions"]))
-    damage_per_minute = cal_per_minute(total_damage, game_duration)
-
-    total_damage_taken = cal_total(
-        int(participant["physicalDamageTaken"]),
-        int(participant["magicDamageTaken"]),
-        int(participant["trueDamageTaken"]))
-    damage_taken_per_minute = cal_per_minute(total_damage_taken, game_duration)
-
-    gold_earned = participant["goldEarned"]
-    gold_per_minute = cal_per_minute(gold_earned, game_duration)
-
-    damage_conversion_rate = round(total_damage / gold_earned, 4)
-
-    # 返回计算后的属性值
-    return {
-        "damageConversionRate": damage_conversion_rate,  # 伤害转化率
-        "damagePerMinute": damage_per_minute,
-        "damageTakenPerMinute": damage_taken_per_minute,  # 分均承受伤害
-        "goldPerMinute": gold_per_minute,  # 分均经济
-        "kda": kda,  # kda
-    }
 
 
 def dateString_to_datetime(date_string):
@@ -151,21 +132,9 @@ def cal_kda(kill, death, assists):
     else:
         return round((kill + assists) / death, 2)
 
-
-def cal_per_minute(totalValue, totalTime):
-    return round(totalValue / totalTime, 2)
-
-
-def cal_total(physicalDamageTaken, magicDamageTaken, trueDamageTaken):
-    return physicalDamageTaken + magicDamageTaken + trueDamageTaken
-
-
 def cal_win(team, win_team):
     if team == win_team:
         return 1
     else:
         return 0
 
-
-def replace_itemName(item_num):
-    return item_name[str(item_num)]['name']
