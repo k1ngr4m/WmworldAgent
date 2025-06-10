@@ -5,8 +5,8 @@ from config.params import token
 timestamp = str(int(time.time()))
 
 API_URL = {
-    'get_history_url': 'https://api.wmpvp.com/api/csgo/home/match/list',
-    'get_match_url': 'https://api.wmpvp.com/api/v1/csgo/match',
+    'MATCH_LIST': 'https://api.wmpvp.com/api/csgo/home/match/list',
+    'MATCH_DETAIL': 'https://api.wmpvp.com/api/v1/csgo/match',
 }
 HEADERS = {
     'Host': 'api.wmpvp.com',

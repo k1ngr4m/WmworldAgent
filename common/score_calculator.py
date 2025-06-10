@@ -1,144 +1,134 @@
-import pytz
-
 from datetime import datetime
 from utils.log_util import logger
 
+# 玩家字段映射：输出键 -> 输入键
+PLAYER_FIELD_MAP = {
+    "playerId": "playerId",
+    "nickName": "nickName",
+    "team": "team",
+    "kills": "kill",
+    "deaths": "death",
+    "assists": "assist",
+    "headShot": "headShot",
+    "headShotCount": "headShotCount",
+    "headShotRatio": "headShotRatio",
+    "rating": "rating",
+    "pwRating": "pwRating",
+    "flash": "flash",
+    "flashTeammate": "flashTeammate",
+    "flashSuccess": "flashSuccess",
+    "mvpValue": "mvpValue",
+    "twoKill": "twoKill",
+    "threeKill": "threeKill",
+    "fourKill": "fourKill",
+    "fiveKill": "fiveKill",
+    "vs1": "vs1",
+    "vs2": "vs2",
+    "vs3": "vs3",
+    "vs4": "vs4",
+    "vs5": "vs5",
+    "dmgArmor": "dmgArmor",
+    "dmgHealth": "dmgHealth",
+    "adpr": "adpr",
+    "fireCount": "fireCount",
+    "hitCount": "hitCount",
+    "rws": "rws",
+    "pvpTeam": "pvpTeam",
+    "ranks": "rank",
+    "we": "we",
+    "throwsCnt": "throwsCnt",
+    "teamId": "teamId",
+    "snipeNum": "snipeNum",
+    "entryKill": "entryKill",
+    "firstDeath": "firstDeath",
+    "mvp": "mvp",
+    "kast": "kast",
+    "handGunKill": "handGunKill",
+    "awpKill": "awpKill",
+    "entryDeath": "entryDeath",
+    "botKill": "botKill",
+    "negKill": "negKill",
+    "damage": "damage",
+    "multiKills": "multiKills",
+    "itemThrow": "itemThrow",
+    "score": "score",
+    "endGame": "endGame",
+    "oldRank": "oldRank",
+    "pvpScore": "pvpScore",
+    "pvpScoreChange": "pvpScoreChange",
+    "matchScore": "matchScore",
+    "csMatchPlayerInterestList": "csMatchPlayerInterestList",
+    "first": "first",
+    "second": "second",
+    "third": "third",
+}
 
-# 保留特定的键值对
-def get_filtered_data(data, toSteamId):
-    steam_id_str = str(toSteamId)
-    win_team = data['base']['winTeam']
+CHINESE_WEEKDAYS = {
+    0: '星期一', 1: '星期二', 2: '星期三', 3: '星期四',
+    4: '星期五', 5: '星期六', 6: '星期日'
+}
 
-    def filter_participant(players, winTeam):
-        return {
-            "playerId": players['playerId'],
-            "nickName": players['nickName'],
-            "team": players['team'],
-            "kills": players['kill'],            # 击杀
-            "deaths": players['death'],          # 死亡
-            "assists": players['assist'],        # 助攻
-            "headShot": players['headShot'],            # 爆头数
-            "headShotCount": players['headShotCount'],      # 爆头数
-            "headShotRatio": players['headShotRatio'],  # 爆头率
-            "rating": players['rating'],        # rating
-            "pwRating": players['pwRating'],    # pwRating
-            "flash": players['flash'],
-            "flashTeammate": players['flashTeammate'],      # 闪白队友次数
-            "flashSuccess": players['flashSuccess'],        # 闪白对手次数
-            "mvpValue": players['mvpValue'],
-            "twoKill": players['twoKill'],
-            "threeKill": players['threeKill'],
-            "fourKill": players['fourKill'],
-            "fiveKill": players['fiveKill'],
-            "vs1": players['vs1'],
-            "vs2": players['vs2'],
-            "vs3": players['vs3'],
-            "vs4": players['vs4'],
-            "vs5": players['vs5'],
-            "dmgArmor": players['dmgArmor'],    # 甲伤
-            "dmgHealth": players['dmgHealth'],  # 血伤
-            "adpr": players['adpr'],        # ADR
-            "fireCount": players['fireCount'],
-            "hitCount": players['hitCount'],
-            "rws": players['rws'],          # RWS
-            "pvpTeam": players['pvpTeam'],
-            "ranks": players['rank'],
-            "we": players['we'],                    # WE
-            "throwsCnt": players['throwsCnt'],      # 投掷数
-            "teamId": players['teamId'],            # 队伍
-            "snipeNum": players['snipeNum'],        # 狙杀
-            "entryKill": players['entryKill'],      # 首杀
-            "firstDeath": players['firstDeath'],    # 首死
-            "mvp": players['mvp'],
-            "kda": cal_kda(int(players["kill"]), int(players["death"]), int(players["assist"])),
-            "kast": players['kast'],
-            "handGunKill": players['handGunKill'],
-            "awpKill": players['awpKill'],
-            "entryDeath": players['entryDeath'],
-            "botKill": players['botKill'],
-            "negKill": players['negKill'],
-            "damage": players['damage'],
-            "multiKills": players['multiKills'],
-            "itemThrow": players['itemThrow'],
-            "score": players['score'],
-            "endGame": players['endGame'],
-            "oldRank": players['oldRank'],
-            "pvpScore": players['pvpScore'],
-            "pvpScoreChange": players['pvpScoreChange'],
-            "matchScore": players['matchScore'],
-            "csMatchPlayerInterestList": players['csMatchPlayerInterestList'],
-            "first": players['first'],
-            "second": players['second'],
-            "third": players['third'],
-            "win": cal_win(players['team'], winTeam),
-            # "challenges": calculate_participant_scores(players, data),
-        }
+DATETIME_FMT = "%Y-%m-%d %H:%M:%S"
 
-    filtered_players = [
-        filter_participant(players, win_team)
-        for players in data["players"]
-        if players["playerId"] == steam_id_str and players is not None
-    ]
 
-    filtered_data = {
-        "matchId": data['base']['matchId'],
-        "map": data['base']['map'],
-        "mapEn": data['base']['mapEn'],
-        "startTime": dateString_to_datetime(data['base']['startTime']),
-        "endTime": dateString_to_datetime(data['base']['endTime']),
-        "duration": data['base']['duration'],
-        "winTeam": data['base']['winTeam'],
-        "score1": data['base']['score1'],
-        "score2": data['base']['score2'],
-        "team1PvpId": data['base']['team1PvpId'],
-        "team2PvpId": data['base']['team2PvpId'],
-        "pvpLadder": data['base']['pvpLadder'],
-        "mode": data['base']['mode'],
-        "dayOfWeek": get_chinese_day_of_week(data['base']["startTime"]),
-        "players": filtered_players,
+def parse_datetime(ts: str) -> datetime:
+    """将字符串解析为 datetime 对象"""
+    return datetime.strptime(ts, DATETIME_FMT)
+
+
+def get_chinese_weekday(dt: datetime) -> str:
+    """根据 datetime 返回中文星期几"""
+    return CHINESE_WEEKDAYS.get(dt.weekday(), '')
+
+
+def cal_kda(kill: int, death: int, assist: int) -> float:
+    """计算 KDA，避免除零"""
+    return round((kill + assist) / (death or 1), 2)
+
+
+def cal_win(team: str, win_team: str) -> int:
+    """判断是否获胜"""
+    return int(team == win_team)
+
+
+def get_filtered_data(data: dict, toSteamId: str) -> dict:
+    """从原始比赛数据中过滤出指定玩家及基础信息"""
+    steam_id = str(toSteamId)
+    base = data.get('base', {})
+    win_team = base.get('winTeam')
+
+    # 解析并缓存时间/星期
+    start_dt = parse_datetime(base.get('startTime', ''))
+    end_dt = parse_datetime(base.get('endTime', ''))
+    day_of_week = get_chinese_weekday(start_dt)
+
+    # 筛选并映射玩家数据
+    players = [p for p in data.get('players', []) if str(p.get('playerId')) == steam_id]
+    filtered_players = []
+    for p in players:
+        mapped = {out_key: p.get(in_key) for out_key, in_key in PLAYER_FIELD_MAP.items()}
+        # 动态计算字段
+        mapped['kda'] = cal_kda(int(p.get('kill', 0)), int(p.get('death', 0)), int(p.get('assist', 0)))
+        mapped['win'] = cal_win(p.get('team'), win_team)
+        filtered_players.append(mapped)
+
+    result = {
+        'matchId': base.get('matchId'),
+        'map': base.get('map'),
+        'mapEn': base.get('mapEn'),
+        'startTime': start_dt,
+        'endTime': end_dt,
+        'duration': base.get('duration'),
+        'winTeam': win_team,
+        'score1': base.get('score1'),
+        'score2': base.get('score2'),
+        'team1PvpId': base.get('team1PvpId'),
+        'team2PvpId': base.get('team2PvpId'),
+        'pvpLadder': base.get('pvpLadder'),
+        'mode': base.get('mode'),
+        'dayOfWeek': day_of_week,
+        'players': filtered_players,
     }
-    logger.debug(filtered_data)
 
-    return filtered_data
-
-
-def dateString_to_datetime(date_string):
-    date_format = "%Y-%m-%d %H:%M:%S"
-    traditional_format = datetime.strptime(date_string, date_format)
-    return traditional_format
-
-
-def get_chinese_day_of_week(date_string):
-    # 映射英文星期几到中文的字典
-    translation = {
-        'Monday': '星期一',
-        'Tuesday': '星期二',
-        'Wednesday': '星期三',
-        'Thursday': '星期四',
-        'Friday': '星期五',
-        'Saturday': '星期六',
-        'Sunday': '星期日'
-    }
-
-    date_format = "%Y-%m-%d %H:%M:%S"
-    dt_beijing = datetime.strptime(date_string, date_format)
-
-    # 将日期时间转换为英文星期几
-    english_day_of_week = dt_beijing.strftime('%A')
-
-    # 返回对应的中文星期几，如果在字典中找不到对应的值，则返回原始的英文星期几
-    return translation.get(english_day_of_week, english_day_of_week)
-
-
-def cal_kda(kill, death, assists):
-    if death == 0:
-        return round((kill + assists) / (death + 1), 2)
-    else:
-        return round((kill + assists) / death, 2)
-
-def cal_win(team, win_team):
-    if team == win_team:
-        return 1
-    else:
-        return 0
-
+    logger.debug(result)
+    return result

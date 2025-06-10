@@ -18,19 +18,35 @@ class MysqlUtil:
         self.cursor.execute(sql)
         return self.cursor.fetchall()
 
-    def sql_execute(self, sql):
+    def sql_execute(self, sql, params=None):
+        """支持带参数的SQL执行"""
         try:
             if self.db and self.cursor:
-                self.cursor.execute(sql)
+                if params:
+                    self.cursor.execute(sql, params)
+                else:
+                    self.cursor.execute(sql)
                 affected_rows = self.cursor.rowcount
                 self.db.commit()
-                # logger.info(f"受影响的行数: {affected_rows}")
                 return affected_rows
         except Exception as e:
             self.db.rollback()
-            logger.error(sql)
-            logger.error(e)
-            logger.error("sql语句执行错误，已执行回滚操作")
+            logger.error(f"SQL执行错误: {sql}")
+            logger.error(f"错误详情: {e}")
+            return False
+
+    def executemany(self, sql, params_list):
+        """新增批量执行方法"""
+        try:
+            if self.db and self.cursor:
+                self.cursor.executemany(sql, params_list)
+                affected_rows = self.cursor.rowcount
+                self.db.commit()
+                return affected_rows
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"批量执行错误: {sql}")
+            logger.error(f"错误详情: {e}")
             return False
 
     def delete_data(self, delete_query):

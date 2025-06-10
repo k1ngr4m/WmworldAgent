@@ -1,119 +1,100 @@
-import logging
-from utils.log_util import logger
+import time
 from utils.mysql_util import mysql
+from utils.log_util import logger
 from config.settings import tb_match_detail_name
+
+# 定义所有字段（公共字段 + 玩家字段)
+COLUMNS = [
+    "matchId", "map", "mapEn", "startTime", "endTime", "duration", "winTeam",
+    "score1", "score2", "team1PvpId", "team2PvpId", "pvpLadder", "mode",
+    "dayOfWeek",
+    # 玩家专属字段：
+    "playerId", "nickName", "team", "kills", "deaths", "assists", "headShot",
+    "headShotCount", "headShotRatio", "rating", "pwRating", "flash",
+    "flashTeammate", "flashSuccess", "mvpValue", "twoKill", "threeKill",
+    "fourKill", "fiveKill", "vs1", "vs2", "vs3", "vs4", "vs5", "dmgArmor",
+    "dmgHealth", "adpr", "fireCount", "hitCount", "rws", "pvpTeam", "ranks",
+    "we", "throwsCnt", "teamId", "snipeNum", "entryKill", "firstDeath", "mvp",
+    "kda", "kast", "handGunKill", "awpKill", "entryDeath", "botKill",
+    "negKill", "damage", "multiKills", "itemThrow", "score", "endGame",
+    "oldRank", "pvpScore", "pvpScoreChange", "matchScore", "win"
+]
+
+# 根据字段列表自动生成占位符和列名串
+PLACEHOLDERS = ", ".join(f"%({col})s" for col in COLUMNS)
+COLUMN_LIST = ", ".join(COLUMNS)
+
+# 批量大小常量
+BATCH_SIZE = 100
+
+# 可选：开启“插入或更新”功能
+# ON_DUPLICATE = ""
+# 若需要 upsert，可取消下面注释：
+duplicates = ", ".join(f"{col}=VALUES({col})" for col in COLUMNS)
+ON_DUPLICATE = f"ON DUPLICATE KEY UPDATE {duplicates}"
+
+INSERT_SQL = f"""
+INSERT INTO {tb_match_detail_name} ({COLUMN_LIST})
+VALUES ({PLACEHOLDERS})
+{ON_DUPLICATE}
+"""
+
+def _bulk_insert(batch):
+    """
+    批量插入：先尝试 executemany，一旦失败再逐条插入。
+    返回成功插入的行数。
+    """
+    inserted = 0
+    try:
+        rows = mysql.executemany(INSERT_SQL, batch)
+        if rows is False:
+            raise RuntimeError("executemany 返回 False")
+        inserted += rows
+        logger.debug(f"批量插入成功：{rows} 条")
+    except Exception as e:
+        logger.warning(f"批量插入失败（{e}），切换单条插入")
+        for rec in batch:
+            try:
+                res = mysql.sql_execute(INSERT_SQL, rec)
+                if res:
+                    inserted += 1
+                else:
+                    logger.error(f"单条插入失败，playerId={rec.get('playerId')}")
+            except Exception as e2:
+                logger.error(f"单条插入异常，playerId={rec.get('playerId')}：{e2}")
+    return inserted
 
 
 def update_summoner_data_to_db(match_data):
-    game = match_data  # 因为 JSON 数据是一个包含单个元素的列表
-    matchId = game['matchId']
-    map = game['map']
-    mapEn = game['mapEn']
-    startTime = game['startTime']
-    endTime = game['endTime']
-    duration = game['duration']
-    winTeam = game['winTeam']
-    score1 = game['score1']
-    score2 = game['score2']
-    team1PvpId = game['team1PvpId']
-    team2PvpId = game['team2PvpId']
-    pvpLadder = game['pvpLadder']
-    mode = game['mode']
-    dayOfWeek = game['dayOfWeek']
-    players = game.get('players', [])  # 获取参与者列表，若不存在则为空列表
+    """
+    将一场比赛及其所有玩家的数据分批插入（或 upsert）到数据库。
+    """
+    try:
+        players = match_data.get("players") or []
+        if not players:
+            logger.info("没有玩家数据，跳过插入")
+            return
 
-    if players:  # 如果参与者列表不为空
-        player = players[0]  # 获取第一个参与者
-        playerId = player["playerId"]
-        nickName = player["nickName"]
-        team = player["team"]
-        kills = player["kills"]
-        deaths = player["deaths"]
-        assists = player["assists"]
-        headShot = player["headShot"]
-        headShotCount = player["headShotCount"]
-        headShotRatio = player["headShotRatio"]
-        rating = player["rating"]
-        pwRating = player["pwRating"]
-        flash = player["flash"]
-        flashTeammate = player["flashTeammate"]
-        flashSuccess = player["flashSuccess"]
-        mvpValue = player["mvpValue"]
-        twoKill = player["twoKill"]
-        threeKill = player["threeKill"]
-        fourKill = player["fourKill"]
-        fiveKill = player["fiveKill"]
-        vs1 = player["vs1"]
-        vs2 = player["vs2"]
-        vs3 = player["vs3"]
-        vs4 = player["vs4"]
-        vs5 = player["vs5"]
-        dmgArmor = player["dmgArmor"]
-        dmgHealth = player["dmgHealth"]
-        adpr = player["adpr"]
-        fireCount = player["fireCount"]
-        hitCount = player["hitCount"]
-        rws = player["rws"]
-        pvpTeam = player["pvpTeam"]
-        ranks = player["ranks"]
-        we = player["we"]
-        throwsCnt = player["throwsCnt"]
-        teamId = player["teamId"]
-        snipeNum = player["snipeNum"]
-        entryKill = player["entryKill"]
-        firstDeath = player["firstDeath"]
-        mvp = player["mvp"]
-        kda = player["kda"]
-        kast = player["kast"]
-        handGunKill = player["handGunKill"]
-        awpKill = player["awpKill"]
-        entryDeath = player["entryDeath"]
-        botKill = player["botKill"]
-        negKill = player["negKill"]
-        damage = player["damage"]
-        multiKills = player["multiKills"]
-        itemThrow = player["itemThrow"]
-        score = player["score"]
-        endGame = player["endGame"]
-        oldRank = player["oldRank"]
-        pvpScore = player["pvpScore"]
-        pvpScoreChange = player["pvpScoreChange"]
-        matchScore = player["matchScore"]
-        csMatchPlayerInterestList = player["csMatchPlayerInterestList"]
-        first = player["first"]
-        second = player["second"]
-        third = player["third"]
-        win = player["win"]
+        # 一次性构建公共字段
+        common_data = {k: match_data[k] for k in (
+            "matchId", "map", "mapEn", "startTime", "endTime", "duration",
+            "winTeam", "score1", "score2", "team1PvpId", "team2PvpId",
+            "pvpLadder", "mode", "dayOfWeek"
+        )}
 
-        # 构建SQL插入语句示例
-        insert_sql = f"""
-        INSERT INTO {tb_match_detail_name} (
-            matchId, map, mapEn, startTime, endTime, duration, winTeam, score1, score2,
-            team1PvpId, team2PvpId, pvpLadder, mode, dayOfWeek,
-            playerId, nickName, team, kills, deaths, assists, headShot, headShotCount, headShotRatio,
-            rating, pwRating, flash, flashTeammate, flashSuccess, mvpValue, twoKill,
-            threeKill, fourKill, fiveKill, vs1, vs2, vs3, vs4, vs5, dmgArmor, dmgHealth,
-            adpr, fireCount, hitCount, rws, pvpTeam, ranks, we, throwsCnt, teamId,
-            snipeNum, entryKill, firstDeath, mvp, kda, kast, handGunKill, awpKill, 
-            entryDeath, botKill, negKill, damage, multiKills, itemThrow, score, endGame,
-            oldRank, pvpScore, pvpScoreChange, matchScore,
-            win
-        ) VALUES (
-            '{matchId}', '{map}', '{mapEn}', '{startTime}', '{endTime}', {duration},
-            {winTeam}, {score1}, {score2}, {team1PvpId}, {team2PvpId}, {pvpLadder}, '{mode}','{dayOfWeek}', 
-            '{playerId}', '{nickName}', {team}, {kills}, {deaths}, {assists}, {headShot}, {headShotCount}, 
-            {headShotRatio}, {rating}, {pwRating}, {flash}, {flashTeammate},
-            {flashSuccess}, {mvpValue}, {twoKill}, {threeKill}, {fourKill}, {fiveKill},
-            {vs1}, {vs2}, {vs3}, {vs4}, {vs5}, {dmgArmor}, {dmgHealth}, {adpr},
-            {fireCount}, {hitCount}, {rws}, {pvpTeam}, {ranks}, {we}, {throwsCnt},
-            {teamId}, {snipeNum}, {entryKill}, {firstDeath}, {mvp}, {kda}, {kast}, {handGunKill}, {awpKill}, 
-            {entryDeath}, {botKill}, {negKill}, {damage}, {multiKills}, {itemThrow}, {score}, {endGame},
-            {oldRank}, {pvpScore}, {pvpScoreChange}, {matchScore}, 
-            {win}
-        );
-        """
+        # 合并成批量数据列表
+        batch_data = [{**common_data, **player} for player in players]
 
-        logger.info(insert_sql)
-        # 执行 SQL 语句
-        mysql.sql_execute(insert_sql)
-    logger.info("SQL执行完毕")
+        start = time.time()
+        total_inserted = 0
+        # 按 BATCH_SIZE 分批插入
+        for i in range(0, len(batch_data), BATCH_SIZE):
+            batch = batch_data[i : i + BATCH_SIZE]
+            total_inserted += _bulk_insert(batch)
+        elapsed = time.time() - start
+
+        logger.info(f"共插入 {total_inserted}/{len(players)} 条，用时 {elapsed:.2f}s")
+    except KeyError as e:
+        logger.error(f"数据字段缺失：{e}")
+    except Exception as e:
+        logger.error(f"更新比赛数据异常：{e}")
