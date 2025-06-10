@@ -1,25 +1,31 @@
 import pymysql
 from utils.log_util import logger
-from config.settings import DB_CONFIG
-
+from config.config import DB_CONFIG
 
 class MysqlUtil:
     def __init__(self):
         self.db = pymysql.connect(**DB_CONFIG)
         self.cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
 
-    # 获取单条数据
     def get_fetchone(self, sql):
-        self.cursor.execute(sql)
-        return self.cursor.fetchone()
+        try:
+            self.cursor.execute(sql)
+            return self.cursor.fetchone()
+        except Exception as e:
+            logger.error(f"获取单条数据出错: {sql}")
+            logger.error(f"错误详情: {e}")
+            return None
 
-    # 获取多条数据
     def get_fetchall(self, sql):
-        self.cursor.execute(sql)
-        return self.cursor.fetchall()
+        try:
+            self.cursor.execute(sql)
+            return self.cursor.fetchall()
+        except Exception as e:
+            logger.error(f"获取多条数据出错: {sql}")
+            logger.error(f"错误详情: {e}")
+            return None
 
     def sql_execute(self, sql, params=None):
-        """支持带参数的SQL执行"""
         try:
             if self.db and self.cursor:
                 if params:
@@ -36,7 +42,6 @@ class MysqlUtil:
             return False
 
     def executemany(self, sql, params_list):
-        """新增批量执行方法"""
         try:
             if self.db and self.cursor:
                 self.cursor.executemany(sql, params_list)
@@ -52,7 +57,7 @@ class MysqlUtil:
     def delete_data(self, delete_query):
         try:
             self.cursor.execute(delete_query)
-            affected_rows = self.cursor.rowcount  # 获取受影响的行数
+            affected_rows = self.cursor.rowcount
             self.db.commit()
             logger.info(f"删除成功，受影响的行数: {affected_rows}")
             return affected_rows
@@ -60,7 +65,6 @@ class MysqlUtil:
             self.db.rollback()
             logger.error("删除失败:", e)
 
-    @staticmethod
     def close(self):
         if self.cursor is not None:
             self.cursor.close()

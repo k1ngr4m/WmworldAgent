@@ -1,7 +1,6 @@
 from datetime import datetime
 from utils.log_util import logger
 
-# 玩家字段映射：输出键 -> 输入键
 PLAYER_FIELD_MAP = {
     "playerId": "playerId",
     "nickName": "nickName",
@@ -70,48 +69,32 @@ CHINESE_WEEKDAYS = {
 
 DATETIME_FMT = "%Y-%m-%d %H:%M:%S"
 
-
 def parse_datetime(ts: str) -> datetime:
-    """将字符串解析为 datetime 对象"""
     return datetime.strptime(ts, DATETIME_FMT)
 
-
 def get_chinese_weekday(dt: datetime) -> str:
-    """根据 datetime 返回中文星期几"""
     return CHINESE_WEEKDAYS.get(dt.weekday(), '')
 
-
 def cal_kda(kill: int, death: int, assist: int) -> float:
-    """计算 KDA，避免除零"""
     return round((kill + assist) / (death or 1), 2)
 
-
 def cal_win(team: str, win_team: str) -> int:
-    """判断是否获胜"""
     return int(team == win_team)
 
-
 def get_filtered_data(data: dict, toSteamId: str) -> dict:
-    """从原始比赛数据中过滤出指定玩家及基础信息"""
     steam_id = str(toSteamId)
     base = data.get('base', {})
     win_team = base.get('winTeam')
-
-    # 解析并缓存时间/星期
     start_dt = parse_datetime(base.get('startTime', ''))
     end_dt = parse_datetime(base.get('endTime', ''))
     day_of_week = get_chinese_weekday(start_dt)
-
-    # 筛选并映射玩家数据
     players = [p for p in data.get('players', []) if str(p.get('playerId')) == steam_id]
     filtered_players = []
     for p in players:
         mapped = {out_key: p.get(in_key) for out_key, in_key in PLAYER_FIELD_MAP.items()}
-        # 动态计算字段
         mapped['kda'] = cal_kda(int(p.get('kill', 0)), int(p.get('death', 0)), int(p.get('assist', 0)))
         mapped['win'] = cal_win(p.get('team'), win_team)
         filtered_players.append(mapped)
-
     result = {
         'matchId': base.get('matchId'),
         'map': base.get('map'),
@@ -129,6 +112,5 @@ def get_filtered_data(data: dict, toSteamId: str) -> dict:
         'dayOfWeek': day_of_week,
         'players': filtered_players,
     }
-
     logger.debug(result)
     return result
