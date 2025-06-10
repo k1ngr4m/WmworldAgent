@@ -26,7 +26,7 @@ DB_CONFIG = {
 
 
 tb_summoner_info_name = '1'
-tb_match_detail_name = 'cs_matches_detailV2'
+tb_match_detail_name = 'cs_matches_detail'
 
 
 # 返回日志目录
