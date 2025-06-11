@@ -1,53 +1,66 @@
 import argparse
-import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
+from config.config import DBConfig, APIConfig, AppConfig
+from common.services import APIService
+from utils.repositories import MySQLRepository
+from common.match_data_fetcher import MatchDataFetcher
 from utils.log_util import logger
-from common.match_data_fetcher import new_fetcher
-from config.config import userList, all_summoners_list
 
-def process_summoner(fetcher, steam_id: str):
-    try:
-        logger.info(f"开始处理 Steam ID: {steam_id}")
-        fetcher.process_player(steam_id)
-        logger.info(f"完成处理 Steam ID: {steam_id}")
-    except Exception as e:
-        logger.error(f"处理 {steam_id} 时出错: {e}")
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="批量拉取并处理 CS:GO 召唤师比赛数据"
-    )
-    parser.add_argument(
-        "-u", "--users",
-        help="要处理的召唤师列表，用逗号分隔；或使用'all'代表处理全部",
-        default=userList
-    )
-    parser.add_argument(
-        "-t", "--threads",
-        type=int,
-        default=4,
-        help="并发线程数 (默认: 4)"
-    )
-    return parser.parse_args()
 
 def main():
-    args = parse_args()
-    raw = args.users.split(',')
-    if raw[0].strip().lower() == 'all':
-        targets = all_summoners_list
-    else:
-        targets = [s.strip() for s in raw if s.strip()]
-    if not targets:
-        logger.error("未指定任何要处理的召唤师。")
-        sys.exit(1)
-    fetcher = new_fetcher()
-    with ThreadPoolExecutor(max_workers=args.threads) as executor:
-        future_to_id = {executor.submit(process_summoner, fetcher, sid): sid for sid in targets}
-        for future in as_completed(future_to_id):
-            sid = future_to_id[future]
-            if future.exception():
-                logger.error(f"召唤师 {sid} 处理失败: {future.exception()}")
-    logger.info("所有召唤师数据处理完成。")
+    # 初始化配置
+    db_config = DBConfig()
+    api_config = APIConfig()
+    app_config = AppConfig(db_config, api_config)
 
-if __name__ == '__main__':
+    # 初始化服务
+    api_service = APIService(app_config)
+    db_repo = MySQLRepository(db_config)
+
+    # 命令行解析
+    args = parse_args(app_config)
+
+    # 创建数据获取器
+    fetcher = MatchDataFetcher(api_service, db_repo, app_config)
+
+    # 并发处理
+    with ThreadPoolExecutor(max_workers=args.threads) as executor:
+        futures = []
+        for steam_id in args.targets:
+            futures.append(executor.submit(process_summoner, fetcher, steam_id))
+
+        for future in futures:
+            try:
+                future.result()
+            except Exception as e:
+                logger.error(f"处理失败: {e}")
+
+
+def parse_args(config: AppConfig):
+    parser = argparse.ArgumentParser(description="CS:GO比赛数据获取器")
+    parser.add_argument("-u", "--users", default="all",
+                        help="召唤师列表，逗号分隔或'all'")
+    parser.add_argument("-t", "--threads", type=int, default=4,
+                        help="并发线程数")
+    args = parser.parse_args()
+
+    if args.users.lower() == "all":
+        args.targets = config.all_summoners_list
+    else:
+        args.targets = [s.strip() for s in args.users.split(",")]
+
+    if not args.targets:
+        logger.error("未指定有效的召唤师ID")
+        exit(1)
+
+    return args
+
+
+def process_summoner(fetcher: MatchDataFetcher, steam_id: str):
+    logger.info(f"开始处理 Steam ID: {steam_id}")
+    fetcher.process_player(steam_id)
+    logger.info(f"完成处理 Steam ID: {steam_id}")
+
+
+if __name__ == "__main__":
     main()

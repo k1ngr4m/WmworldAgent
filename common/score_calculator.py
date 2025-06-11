@@ -56,10 +56,6 @@ PLAYER_FIELD_MAP = {
     "pvpScore": "pvpScore",
     "pvpScoreChange": "pvpScoreChange",
     "matchScore": "matchScore",
-    "csMatchPlayerInterestList": "csMatchPlayerInterestList",
-    "first": "first",
-    "second": "second",
-    "third": "third",
 }
 
 CHINESE_WEEKDAYS = {

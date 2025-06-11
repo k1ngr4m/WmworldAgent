@@ -21,12 +21,9 @@ COLUMNS = [
 PLACEHOLDERS = ", ".join(f"%({col})s" for col in COLUMNS)
 COLUMN_LIST = ", ".join(COLUMNS)
 BATCH_SIZE = 100
-duplicates = ", ".join(f"{col}=VALUES({col})" for col in COLUMNS)
-ON_DUPLICATE = f"ON DUPLICATE KEY UPDATE {duplicates}"
 INSERT_SQL = f"""
 INSERT INTO {tb_match_detail_name} ({COLUMN_LIST})
 VALUES ({PLACEHOLDERS})
-{ON_DUPLICATE}
 """
 
 def _bulk_insert(batch):

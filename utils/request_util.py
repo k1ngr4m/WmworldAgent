@@ -1,3 +1,5 @@
+import time
+
 import requests
 from utils.log_util import logger
 
@@ -19,4 +21,5 @@ class RequestUtil:
             logger.error(f"Request to {url} failed: {str(e)}")
         except ValueError as ve:
             logger.error(f"JSON decode error: {str(ve)}")
+            time.sleep(1)
         return None
