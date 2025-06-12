@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索结果 - WmWorldAgent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .search-box {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .search-input {
+            padding: 10px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .search-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .search-button:hover {
+            background-color: #45a049;
+        }
+        .results {
+            margin-bottom: 30px;
+        }
+        .results h3 {
+            margin-bottom: 10px;
+        }
+        .player-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .player-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .player-info {
+            flex: 1;
+        }
+        .player-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .player-stats {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .view-button {
+            padding: 8px 16px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .view-button:hover {
+            background-color: #0b7dda;
+        }
+        .error {
+            color: red;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WmWorldAgent</h1>
+            <p>CSGO完美平台玩家数据查询系统</p>
+        </div>
+
+        <div class="search-box">
+            <form action="{% url 'search_player' %}" method="get">
+                <input type="text" name="query" placeholder="输入玩家名称或SteamID" class="search-input">
+                <button type="submit" class="search-button">搜索</button>
+            </form>
+        </div>
+
+        {% if error %}
+        <div class="error">
+            {{ error }}
+        </div>
+        {% else %}
+        <div class="results">
+            <h3>搜索结果: "{{ query }}"</h3>
+            <p>找到 {{ players|length }} 个玩家，共 {{ matches_count }} 场比赛记录</p>
+
+            <ul class="player-list">
+                {% for player in players %}
+                <li class="player-item">
+                    <div class="player-info">
+                        <div class="player-name">{{ player.nick_name }} (ID: {{ player.player_id }})</div>
+                        <div class="player-stats">
+                            比赛: {{ player.matches_count }} | 最近比赛: {{ player.last_match|date:"Y-m-d H:i" }}
+                        </div>
+                    </div>
+                    <a href="{% url 'player_detail' player.player_id %}" class="view-button">查看详情</a>
+                </li>
+                {% empty %}
+                <li class="player-item">
+                    <div class="player-info">
+                        未找到匹配的玩家记录
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>© 2023 WmWorldAgent - CSGO玩家数据查询系统</p>
+    </div>
+</body>
+</html>

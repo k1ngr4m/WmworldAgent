@@ -1,0 +1,166 @@
+<!-- templates/match_detail.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>比赛详情 - {{ match.match_id }} - WmWorldAgent</title>
+    <style>
+        /* 样式与之前一致，新增队伍比分展示 */
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .team-score-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .team-score {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 4px;
+        }
+        .team1-score {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+        .team2-score {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: #F44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WmWorldAgent</h1>
+            <p>CSGO完美平台玩家数据查询系统</p>
+        </div>
+
+        <div class="match-info">
+            <div class="match-header">
+                <div>{{ match.start_time|date:"Y-m-d H:i" }} - {{ match.map_en }}</div>
+                <div>比赛ID: {{ match.match_id }}</div>
+            </div>
+
+            <div class="team-score-container">
+                <div class="team-score team1-score">{{ team1_score }}</div>
+                <div>VS</div>
+                <div class="team-score team2-score">{{ team2_score }}</div>
+            </div>
+
+            <div class="match-details">
+                <div class="detail-item">
+                    <div class="detail-label">游戏模式</div>
+                    <div>{{ match.mode }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">比赛时长</div>
+                    <div>{{ match.duration }} 分钟</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">获胜队伍</div>
+                    <div>{{ match.win_team }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">段位</div>
+                    <div>{{ match.pvp_ladder }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="team-stats">
+            <h3>队伍1统计 ({{ team1_players.0.team if team1_players else '未知队伍' }}) - 总击杀: {{ team1_kills }}</h3>
+            <table class="player-table">
+                <thead>
+                    <tr>
+                        <th>玩家</th>
+                        <th>评分</th>
+                        <th>K/D/A</th>
+                        <th>伤害</th>
+                        <th>爆头率</th>
+                        <th>多杀</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in team1_players %}
+                    <tr>
+                        <td>{{ player.nick_name }}</td>
+                        <td>{{ player.rating }}</td>
+                        <td>{{ player.kills }}/{{ player.deaths }}/{{ player.assists }}</td>
+                        <td>{{ player.damage }}</td>
+                        <td>{{ player.head_shot_ratio|floatformat:1 }}%</td>
+                        <td>
+                            {% if player.five_kill > 0 %}{{ player.five_kill }}次五杀{% endif %}
+                            {% if player.four_kill > 0 %}{{ player.four_kill }}次四杀{% endif %}
+                            {% if player.three_kill > 0 %}{{ player.three_kill }}次三杀{% endif %}
+                            {% if player.two_kill > 0 %}{{ player.two_kill }}次双杀{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">无队伍1玩家数据</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="team-stats">
+            <h3>队伍2统计 ({{ team2_players.0.team if team2_players else '未知队伍' }}) - 总击杀: {{ team2_kills }}</h3>
+            <table class="player-table">
+                <thead>
+                    <tr>
+                        <th>玩家</th>
+                        <th>评分</th>
+                        <th>K/D/A</th>
+                        <th>伤害</th>
+                        <th>爆头率</th>
+                        <th>多杀</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in team2_players %}
+                    <tr>
+                        <td>{{ player.nickName }}</td>
+                        <td>{{ player.rating }}</td>
+                        <td>{{ player.kills }}/{{ player.deaths }}/{{ player.assists }}</td>
+                        <td>{{ player.damage }}</td>
+                        <td>{{ player.headShotRatio|floatformat:1 }}%</td>
+                        <td>
+                            {% if player.fiveKill > 0 %}{{ player.fiveKill }}次五杀{% endif %}
+                            {% if player.fourKill > 0 %}{{ player.fourKill }}次四杀{% endif %}
+                            {% if player.threeKill > 0 %}{{ player.threeKill }}次三杀{% endif %}
+                            {% if player.twoKill > 0 %}{{ player.twoKill }}次双杀{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">无队伍2玩家数据</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if mvp_player %}
+        <div class="mvp-info">
+            <h3>本场MVP: {{ mvp_player.nickName }} (评分: {{ mvp_player.rating }})</h3>
+            <div class="mvp-stats">
+                <div>K/D/A: {{ mvp_player.kills }}/{{ mvp_player.deaths }}/{{ mvp_player.assists }}</div>
+                <div>总伤害: {{ mvp_player.damage }}</div>
+                <div>爆头率: {{ mvp_player.headShotRatio|floatformat:1 }}%</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>© 2025 WmWorldAgent - CSGO玩家数据查询系统</p>
+    </div>
+</body>
+</html>
